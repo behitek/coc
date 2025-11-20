@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ClanMember, PlayerDetails } from '../types';
 import { getPlayerDetails } from '../services/cocService';
 import { ArrowUpDown, Zap, Users, Search, Loader2, Shield, Sword, Skull, Heart, Star } from 'lucide-react';
@@ -56,6 +56,13 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
     setIsScanning(false);
     setHasScanned(true);
   };
+
+  // Automatically trigger deep scan on component mount
+  useEffect(() => {
+    if (!hasScanned && !isScanning && members.length > 0) {
+      runDeepScan();
+    }
+  }, [members.length]); // Only run when component mounts or members length changes
 
   // Calculate Activity Score
   const calculateScore = (m: ClanMember) => {

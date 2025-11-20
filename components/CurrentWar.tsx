@@ -63,15 +63,22 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, opponentMembers, isOppo
        </div>
     );
 
-    const starColor = info.stars === 3 ? 'text-coc-gold' : 'text-slate-300';
+    const isPerfect = info.stars === 3;
+    const starColor = isPerfect ? 'text-coc-gold' : 'text-slate-300';
     const percentColor = info.percent === 100 ? 'text-green-400' : 'text-slate-400';
 
+    // Special styling for perfect attacks
+    const bgClass = isPerfect
+      ? 'bg-gradient-to-r from-yellow-900/40 to-amber-900/40 border-coc-gold shadow-lg shadow-yellow-900/30'
+      : 'bg-slate-900 border-slate-700';
+
     return (
-      <div className="flex justify-between items-center bg-slate-900 px-2 py-1 rounded text-xs border border-slate-700">
+      <div className={`flex justify-between items-center px-2 py-1 rounded text-xs border-2 transition-all ${bgClass}`}>
          <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-mono font-bold">#{info.targetId}</span>
             <span className={`font-bold ${starColor} flex items-center`}>
                {info.stars} <Star size={8} className="ml-0.5 fill-current" />
+               {isPerfect && <span className="ml-1 text-[8px] text-coc-gold font-black">PERFECT</span>}
             </span>
          </div>
          <div className={percentColor}>{info.percent}%</div>
@@ -219,17 +226,37 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
   const myClan = war.clan;
   const enemyClan = war.opponent;
 
-  // Calculate total attacks
+  // Calculate star progress and attacks
+  const myStars = myClan.stars || 0;
+  const enemyStars = enemyClan.stars || 0;
+  const maxStars = war.teamSize * 3;
   const myAttacksUsed = myClan.attacks || 0;
   const enemyAttacksUsed = enemyClan.attacks || 0;
   const totalAttacks = war.teamSize * 2;
 
+  // Check for perfect war
+  const isPerfectWar = myStars === maxStars;
+
   return (
     <div className="space-y-6">
+      {/* Perfect War Banner */}
+      {isPerfectWar && (
+        <div className="bg-gradient-to-r from-yellow-900/80 via-amber-800/80 to-yellow-900/80 border-2 border-coc-gold rounded-xl p-4 shadow-2xl shadow-yellow-600/50 animate-pulse">
+          <div className="flex items-center justify-center space-x-3">
+            <Star className="text-coc-gold animate-spin" size={32} style={{ animationDuration: '3s' }} />
+            <div className="text-center">
+              <h2 className="text-2xl font-black text-coc-gold uppercase tracking-wider">Perfect War!</h2>
+              <p className="text-sm text-yellow-200">All {maxStars} stars collected! Outstanding performance! 🎉</p>
+            </div>
+            <Star className="text-coc-gold animate-spin" size={32} style={{ animationDuration: '3s' }} />
+          </div>
+        </div>
+      )}
+
       {/* Header Stats */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg relative overflow-hidden">
+      <div className={`bg-slate-800 rounded-xl p-6 shadow-lg relative overflow-hidden border-2 transition-all ${isPerfectWar ? 'border-coc-gold shadow-2xl shadow-yellow-600/30' : 'border-slate-700'}`}>
          {/* Background Gradient Effect */}
-         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-red-900/20 pointer-events-none"></div>
+         <div className={`absolute inset-0 pointer-events-none ${isPerfectWar ? 'bg-gradient-to-r from-yellow-900/30 via-transparent to-yellow-900/30' : 'bg-gradient-to-r from-blue-900/20 to-red-900/20'}`}></div>
 
          <div className="flex flex-col md:flex-row justify-between items-center relative z-10">
             {/* My Clan */}
@@ -266,24 +293,40 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
             </div>
          </div>
 
-         {/* Attack Progress Bars */}
+         {/* Stars Progress Bars */}
          <div className="mt-8 grid grid-cols-2 gap-8">
             <div>
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                    <span>Attacks Used ({myAttacksUsed}/{totalAttacks})</span>
-                    <span>{Math.round((myAttacksUsed/totalAttacks)*100)}%</span>
+                <div className="flex justify-between text-xs mb-1">
+                    <span className="text-white font-semibold">
+                      ★ Stars: {myStars}/{maxStars}
+                      <span className="text-slate-500 text-[10px] ml-2">({myAttacksUsed}/{totalAttacks} attacks)</span>
+                    </span>
+                    <span className={`font-bold ${myStars === maxStars ? 'text-coc-gold' : 'text-green-400'}`}>
+                      {Math.round((myStars/maxStars)*100)}%
+                    </span>
                 </div>
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${(myAttacksUsed/totalAttacks)*100}%` }}></div>
+                <div className="h-3 bg-slate-700 rounded-full overflow-hidden border border-slate-600">
+                    <div
+                      className={`h-full transition-all duration-1000 ${myStars === maxStars ? 'bg-gradient-to-r from-yellow-400 to-coc-gold' : 'bg-green-500'}`}
+                      style={{ width: `${(myStars/maxStars)*100}%` }}
+                    ></div>
                 </div>
             </div>
             <div>
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                    <span>Attacks Used ({enemyAttacksUsed}/{totalAttacks})</span>
-                    <span>{Math.round((enemyAttacksUsed/totalAttacks)*100)}%</span>
+                <div className="flex justify-between text-xs mb-1">
+                    <span className="text-white font-semibold">
+                      ★ Stars: {enemyStars}/{maxStars}
+                      <span className="text-slate-500 text-[10px] ml-2">({enemyAttacksUsed}/{totalAttacks} attacks)</span>
+                    </span>
+                    <span className={`font-bold ${enemyStars === maxStars ? 'text-coc-gold' : 'text-red-400'}`}>
+                      {Math.round((enemyStars/maxStars)*100)}%
+                    </span>
                 </div>
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-500 transition-all duration-1000" style={{ width: `${(enemyAttacksUsed/totalAttacks)*100}%` }}></div>
+                <div className="h-3 bg-slate-700 rounded-full overflow-hidden border border-slate-600">
+                    <div
+                      className={`h-full transition-all duration-1000 ${enemyStars === maxStars ? 'bg-gradient-to-r from-yellow-400 to-coc-gold' : 'bg-red-500'}`}
+                      style={{ width: `${(enemyStars/maxStars)*100}%` }}
+                    ></div>
                 </div>
             </div>
          </div>
