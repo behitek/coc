@@ -8,7 +8,7 @@ interface MembersRankProps {
   onMemberClick: (tag: string) => void;
 }
 
-type SortField = 'rank' | 'name' | 'role' | 'trophies' | 'donations' | 'activityScore' | 'attackWins' | 'warStars';
+type SortField = 'rank' | 'name' | 'role' | 'townHall' | 'trophies' | 'donations' | 'activityScore' | 'attackWins' | 'warStars';
 
 export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick }) => {
   const [sortField, setSortField] = useState<SortField>('activityScore');
@@ -123,9 +123,13 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
           valA = roleOrder[a.role as keyof typeof roleOrder] || 0;
           valB = roleOrder[b.role as keyof typeof roleOrder] || 0;
           break;
+        case 'townHall':
+          valA = detailsA?.townHallLevel || 0;
+          valB = detailsB?.townHallLevel || 0;
+          break;
         case 'trophies':
-          valA = a.trophies || 0;
-          valB = b.trophies || 0;
+          valA = detailsA?.trophies || a.trophies || 0;
+          valB = detailsB?.trophies || b.trophies || 0;
           break;
         case 'donations':
           valA = a.donations || 0;
@@ -229,12 +233,14 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
             <table className="w-full text-left border-collapse">
             <thead>
                 <tr className="bg-slate-900/50 text-slate-400 text-sm uppercase tracking-wider">
-                <th className="p-4 cursor-pointer hover:bg-slate-800 whitespace-nowrap" onClick={() => handleSort('rank')}>Rank <SortIcon field="rank" /></th>
+                <th className="p-4 cursor-pointer hover:bg-slate-800 whitespace-nowrap" onClick={() => handleSort('rank')}># <SortIcon field="rank" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('name')}>Name <SortIcon field="name" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('role')}>Role <SortIcon field="role" /></th>
-                
+
                 {hasScanned && (
                     <>
+                        <th className="p-4 cursor-pointer hover:bg-slate-800 text-center whitespace-nowrap" onClick={() => handleSort('townHall')}>Town Hall <SortIcon field="townHall" /></th>
+                        <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('trophies')}>Trophies <SortIcon field="trophies" /></th>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('attackWins')}>Wins <SortIcon field="attackWins" /></th>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('warStars')}>War ★ <SortIcon field="warStars" /></th>
                     </>
@@ -301,6 +307,12 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
 
                         {hasScanned && (
                             <>
+                                <td className="p-4 text-center font-mono text-white">
+                                    {details ? <span className="text-coc-orange font-bold">TH{details.townHallLevel}</span> : <span className="text-slate-600">--</span>}
+                                </td>
+                                <td className="p-4 text-right font-mono text-white">
+                                    {details ? <span className="text-purple-400">{details.trophies.toLocaleString()}</span> : <span className="text-slate-600">--</span>}
+                                </td>
                                 <td className="p-4 text-right font-mono text-white">
                                     {details ? <span className="text-green-400">{details.attackWins}</span> : <span className="text-slate-600">--</span>}
                                 </td>
