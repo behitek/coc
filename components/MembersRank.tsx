@@ -236,11 +236,11 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
                 <th className="p-4 cursor-pointer hover:bg-slate-800 whitespace-nowrap" onClick={() => handleSort('rank')}># <SortIcon field="rank" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('name')}>Name <SortIcon field="name" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('role')}>Role <SortIcon field="role" /></th>
+                <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('trophies')}>Trophies <SortIcon field="trophies" /></th>
 
                 {hasScanned && (
                     <>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-center whitespace-nowrap" onClick={() => handleSort('townHall')}>Town Hall <SortIcon field="townHall" /></th>
-                        <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('trophies')}>Trophies <SortIcon field="trophies" /></th>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('attackWins')}>Wins <SortIcon field="attackWins" /></th>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('warStars')}>War ★ <SortIcon field="warStars" /></th>
                     </>
@@ -304,14 +304,14 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
                         </div>
                         </td>
                         <td className="p-4">{getRoleBadge(member.role)}</td>
+                        <td className="p-4 text-right font-mono text-white">
+                            <span className="text-purple-400">{member.trophies.toLocaleString()}</span>
+                        </td>
 
                         {hasScanned && (
                             <>
                                 <td className="p-4 text-center font-mono text-white">
                                     {details ? <span className="text-coc-orange font-bold">TH{details.townHallLevel}</span> : <span className="text-slate-600">--</span>}
-                                </td>
-                                <td className="p-4 text-right font-mono text-white">
-                                    {details ? <span className="text-purple-400">{details.trophies.toLocaleString()}</span> : <span className="text-slate-600">--</span>}
                                 </td>
                                 <td className="p-4 text-right font-mono text-white">
                                     {details ? <span className="text-green-400">{details.attackWins}</span> : <span className="text-slate-600">--</span>}
