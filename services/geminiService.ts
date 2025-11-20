@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ClanDetails, CurrentWar, WarLogEntry } from "../types";
 
 const getAI = () => {
@@ -7,7 +7,7 @@ const getAI = () => {
         console.warn("API_KEY is missing. AI features will not work.");
         return null;
     }
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenerativeAI(apiKey);
 };
 
 export const analyzeClan = async (clan: ClanDetails, warLog: WarLogEntry[]) => {
@@ -53,11 +53,10 @@ export const analyzeClan = async (clan: ClanDetails, warLog: WarLogEntry[]) => {
     `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-        return response.text;
+        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
     } catch (error) {
         console.error("Gemini Error:", error);
         return "Failed to generate AI analysis. Please check your API key or try again later.";
@@ -93,11 +92,10 @@ export const analyzeWarStrategy = async (currentWar: CurrentWar) => {
     `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-        return response.text;
+        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
     } catch (error) {
         console.error("Gemini Error:", error);
         return "Failed to generate strategy.";
