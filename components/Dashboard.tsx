@@ -68,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ clan, warLog }) => {
             View In-Game
           </a>
           <a 
-            href="#" // Placeholder URL
+            href="https://zalo.me/g/wblyoe887" // Placeholder URL
             target="_blank" 
             rel="noreferrer"
             className="flex items-center justify-center px-5 py-2.5 bg-[#0068FF] hover:bg-[#005ce6] text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap group"
