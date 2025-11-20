@@ -1,8 +1,8 @@
 
+import { Shield, Star, Sword, Trophy, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { PlayerDetails, Equipment } from '../types';
 import { getPlayerDetails } from '../services/cocService';
-import { X, Shield, Sword, Star, Zap, Trophy, Hammer, FlaskConical, Target, Bookmark } from 'lucide-react';
+import { Equipment, PlayerDetails } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface PlayerModalProps {
@@ -128,7 +128,8 @@ const ENTITY_IMAGES: Record<string, string> = {
   "Metal Pants": "216.png",
   "Noble Iron": "219.png",
   "Dark Crown": "222.png",
-  "Heroic Torch": "237.png"
+  "Heroic Torch": "237.png",
+  "Meteor Staff": "238.png"
 };
 
 const SIEGE_NAMES = [
