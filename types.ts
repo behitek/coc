@@ -19,6 +19,7 @@ export interface ClanMember {
   previousClanRank: number;
   donations: number;
   donationsReceived: number;
+  townHallLevel: number;
 }
 
 export interface ClanDetails {
