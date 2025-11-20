@@ -124,8 +124,8 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
           valB = roleOrder[b.role as keyof typeof roleOrder] || 0;
           break;
         case 'townHall':
-          valA = detailsA?.townHallLevel || 0;
-          valB = detailsB?.townHallLevel || 0;
+          valA = a.townHallLevel || 0;
+          valB = b.townHallLevel || 0;
           break;
         case 'trophies':
           valA = detailsA?.trophies || a.trophies || 0;
@@ -236,11 +236,11 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
                 <th className="p-4 cursor-pointer hover:bg-slate-800 whitespace-nowrap" onClick={() => handleSort('rank')}># <SortIcon field="rank" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('name')}>Name <SortIcon field="name" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('role')}>Role <SortIcon field="role" /></th>
+                <th className="p-4 cursor-pointer hover:bg-slate-800 text-center whitespace-nowrap" onClick={() => handleSort('townHall')}>Town Hall <SortIcon field="townHall" /></th>
                 <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('trophies')}>Trophies <SortIcon field="trophies" /></th>
 
                 {hasScanned && (
                     <>
-                        <th className="p-4 cursor-pointer hover:bg-slate-800 text-center whitespace-nowrap" onClick={() => handleSort('townHall')}>Town Hall <SortIcon field="townHall" /></th>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('attackWins')}>Wins <SortIcon field="attackWins" /></th>
                         <th className="p-4 cursor-pointer hover:bg-slate-800 text-right whitespace-nowrap" onClick={() => handleSort('warStars')}>War ★ <SortIcon field="warStars" /></th>
                     </>
@@ -269,25 +269,15 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
                         <td className="p-4">
                         <div className="flex items-center">
                             <div className="w-10 h-10 mr-3 flex-shrink-0 flex items-center justify-center relative">
-                                {details?.townHallLevel ? (
-                                    <>
-                                     <img 
-                                        src={`https://www.clash.ninja/images/entities/1_${details.townHallLevel}.png`} 
-                                        alt={`TH${details.townHallLevel}`}
-                                        className="w-full h-full object-contain drop-shadow-md"
-                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} 
-                                    />
-                                    <div className="absolute -bottom-1 -right-1 bg-black/80 text-white text-[8px] font-bold px-1 rounded border border-slate-600">
-                                        {details.townHallLevel}
-                                    </div>
-                                    </>
-                                ) : (
-                                    member.league?.iconUrls ? (
-                                        <img src={member.league.iconUrls.tiny} alt={member.league.name} className="w-8 h-8" />
-                                    ) : (
-                                        <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-xs text-slate-500 font-bold">?</div>
-                                    )
-                                )}
+                                <img
+                                    src={`https://www.clash.ninja/images/entities/1_${member.townHallLevel}.png`}
+                                    alt={`TH${member.townHallLevel}`}
+                                    className="w-full h-full object-contain drop-shadow-md"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                                <div className="absolute -bottom-1 -right-1 bg-black/80 text-white text-[8px] font-bold px-1 rounded border border-slate-600">
+                                    {member.townHallLevel}
+                                </div>
                             </div>
                             
                             <div>
@@ -304,15 +294,15 @@ export const MembersRank: React.FC<MembersRankProps> = ({ members, onMemberClick
                         </div>
                         </td>
                         <td className="p-4">{getRoleBadge(member.role)}</td>
+                        <td className="p-4 text-center font-mono text-white">
+                            <span className="text-coc-orange font-bold">TH{member.townHallLevel}</span>
+                        </td>
                         <td className="p-4 text-right font-mono text-white">
                             <span className="text-purple-400">{member.trophies.toLocaleString()}</span>
                         </td>
 
                         {hasScanned && (
                             <>
-                                <td className="p-4 text-center font-mono text-white">
-                                    {details ? <span className="text-coc-orange font-bold">TH{details.townHallLevel}</span> : <span className="text-slate-600">--</span>}
-                                </td>
                                 <td className="p-4 text-right font-mono text-white">
                                     {details ? <span className="text-green-400">{details.attackWins}</span> : <span className="text-slate-600">--</span>}
                                 </td>
