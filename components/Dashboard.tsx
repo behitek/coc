@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ClanDetails, WarLogEntry } from '../types';
 import { Trophy, Users, Shield, Sword, TrendingUp, ChevronDown, ChevronUp, ExternalLink, MessageCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { RedditPosts } from './RedditPosts';
 
 interface DashboardProps {
   clan: ClanDetails;
@@ -63,6 +64,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ clan, warLog }) => {
       donations: m.donations || 0,
       rank: index + 1
     }));
+
+  // Calculate donation statistics
+  const totalDonations = (clan.memberList || []).reduce((sum, m) => sum + (m.donations || 0), 0);
+  const totalReceived = (clan.memberList || []).reduce((sum, m) => sum + (m.donationsReceived || 0), 0);
+  const avgDonations = clan.members > 0 ? Math.round(totalDonations / clan.members) : 0;
+
+  // Top receivers (Top 5 who received most donations)
+  const topReceivers = (clan.memberList || [])
+    .sort((a, b) => (b.donationsReceived || 0) - (a.donationsReceived || 0))
+    .slice(0, 5);
+
+  // Top 5 highest trophies
+  const topTrophies = (clan.memberList || [])
+    .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
+    .slice(0, 5);
 
   // Safe access for clan points to prevent crashes
   const clanPoints = typeof clan.clanPoints === 'number' ? clan.clanPoints.toLocaleString() : '0';
@@ -163,6 +179,65 @@ export const Dashboard: React.FC<DashboardProps> = ({ clan, warLog }) => {
             <div className="flex items-center"><span className="w-3 h-3 bg-[#cbd5e1] rounded-full mr-2"></span> 2nd Place</div>
             <div className="flex items-center"><span className="w-3 h-3 bg-[#d97706] rounded-full mr-2"></span> 3rd Place</div>
           </div>
+
+          {/* Donation Statistics */}
+          <div className="mt-6 pt-4 border-t border-slate-700">
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-700/50">
+                <div className="text-[10px] text-slate-500 uppercase mb-0.5">Total Given</div>
+                <div className="text-lg font-bold text-coc-gold">{totalDonations.toLocaleString()}</div>
+              </div>
+              <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-700/50">
+                <div className="text-[10px] text-slate-500 uppercase mb-0.5">Total Received</div>
+                <div className="text-lg font-bold text-green-400">{totalReceived.toLocaleString()}</div>
+              </div>
+              <div className="bg-slate-900/50 rounded-lg p-2.5 border border-slate-700/50">
+                <div className="text-[10px] text-slate-500 uppercase mb-0.5">Average</div>
+                <div className="text-lg font-bold text-blue-400">{avgDonations.toLocaleString()}</div>
+              </div>
+            </div>
+
+            {/* Top Receivers */}
+            <div className="mb-3">
+              <h4 className="text-[10px] font-semibold text-slate-400 uppercase mb-2">Top Receivers</h4>
+              <div className="space-y-1.5">
+                {topReceivers.map((member, index) => (
+                  <div
+                    key={member.tag}
+                    className="flex items-center justify-between bg-slate-900/30 rounded px-2.5 py-1.5 border border-slate-700/30"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-500 w-4">#{index + 1}</span>
+                      <span className="text-[11px] text-white truncate max-w-[160px]">{member.name}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-green-400">{(member.donationsReceived || 0).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top Trophies */}
+            <div>
+              <h4 className="text-[10px] font-semibold text-slate-400 uppercase mb-2">Top Trophies</h4>
+              <div className="space-y-1.5">
+                {topTrophies.map((member, index) => (
+                  <div
+                    key={member.tag}
+                    className="flex items-center justify-between bg-slate-900/30 rounded px-2.5 py-1.5 border border-slate-700/30"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-500 w-4">#{index + 1}</span>
+                      <span className="text-[11px] text-white truncate max-w-[160px]">{member.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Trophy className="w-3 h-3 text-yellow-500" />
+                      <span className="text-[11px] font-bold text-yellow-400">{(member.trophies || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Recent War Log */}
@@ -254,6 +329,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ clan, warLog }) => {
           </div>
         </div>
       </div>
+
+      {/* Reddit Pinned Posts */}
+      <RedditPosts />
     </div>
   );
 };

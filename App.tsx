@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Menu, X, Swords } from 'lucide-react';
+import { LayoutDashboard, Users, Menu, X, Swords, ExternalLink } from 'lucide-react';
 import { getClanDetails, getClanWarLog } from './services/cocService';
 import { Dashboard } from './components/Dashboard';
 import { MembersRank } from './components/MembersRank';
@@ -84,7 +84,7 @@ const App: React.FC = () => {
         
         {/* Mobile Header */}
         <div className="md:hidden bg-slate-900 p-4 flex justify-between items-center border-b border-slate-800">
-            <div className="font-bold text-coc-gold text-xl tracking-tighter">CLANRANK AI</div>
+            <NavLink to="/" className="font-bold text-coc-gold text-xl tracking-tighter">CLANRANK AI</NavLink>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white">
                 {mobileMenuOpen ? <X /> : <Menu />}
             </button>
@@ -92,21 +92,33 @@ const App: React.FC = () => {
 
         {/* Sidebar Navigation */}
         <nav className={`
-            fixed inset-y-0 left-0 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-            md:relative md:translate-x-0 transition duration-200 ease-in-out
+            fixed inset-y-0 left-0 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:sticky md:top-0 md:h-screen md:translate-x-0 transition duration-200 ease-in-out
             w-64 bg-slate-900 border-r border-slate-800 z-30 flex flex-col p-4
         `}>
-          <div className="hidden md:block mb-8 mt-2 px-2">
+          <NavLink to="/" className="hidden md:block mb-8 mt-2 px-2">
             <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-coc-gold to-coc-orange tracking-tight">
               CLANRANK AI
             </h1>
             <p className="text-xs text-slate-500 mt-1">Leader Assistant Tool</p>
-          </div>
+          </NavLink>
 
           <div className="space-y-2 flex-1">
             <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" />
             <NavItem to="/war" icon={<Swords size={20} />} label="Current War" />
             <NavItem to="/members" icon={<Users size={20} />} label="Rankings" />
+          </div>
+
+          <div className="mb-4">
+            <a
+              href="https://behitek.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"
+            >
+              <ExternalLink size={20} />
+              <span className="ml-3">Back to Behitek</span>
+            </a>
           </div>
 
           <div className="mt-auto pt-4 border-t border-slate-800">
