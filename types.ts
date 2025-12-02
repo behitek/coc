@@ -213,3 +213,31 @@ export interface LeagueGroup {
     warTags: string[];
   }>;
 }
+
+export interface CWLWar {
+  state: 'notInWar' | 'preparation' | 'inWar' | 'warEnded';
+  teamSize: number;
+  preparationStartTime: string;
+  startTime: string;
+  endTime: string;
+  clan: {
+    tag: string;
+    name: string;
+    badgeUrls: { small: string; medium: string; large: string };
+    clanLevel: number;
+    attacks: number;
+    stars: number;
+    destructionPercentage: number;
+    members: WarMember[];
+  };
+  opponent: {
+    tag: string;
+    name: string;
+    badgeUrls: { small: string; medium: string; large: string };
+    clanLevel: number;
+    attacks: number;
+    stars: number;
+    destructionPercentage: number;
+    members: WarMember[];
+  };
+}

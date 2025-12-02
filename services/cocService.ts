@@ -1,4 +1,4 @@
-import { ClanDetails, WarLogEntry, CurrentWar, PlayerDetails, LeagueGroup } from '../types';
+import { ClanDetails, WarLogEntry, CurrentWar, PlayerDetails, LeagueGroup, CWLWar } from '../types';
 
 const BASE_URL = 'https://coc-apis.behitek.com';
 
@@ -50,6 +50,16 @@ export const getClanWarLeagueGroup = async (clanTag: string): Promise<LeagueGrou
   const response = await fetch(`${BASE_URL}/clans/${formattedTag}/currentwar/leaguegroup`);
   if (!response.ok) {
     throw new Error("Failed to fetch league group");
+  }
+  return response.json();
+};
+
+export const getClanWarLeagueWar = async (warTag: string): Promise<CWLWar> => {
+  // War tags come with # already, so format them
+  const formattedTag = formatTag(warTag);
+  const response = await fetch(`${BASE_URL}/clanwarleagues/wars/${formattedTag}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch CWL war");
   }
   return response.json();
 };

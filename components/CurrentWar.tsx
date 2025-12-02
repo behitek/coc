@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { CurrentWar, WarMember } from '../types';
-import { getClanCurrentWar } from '../services/cocService';
-import { Timer, Swords, Skull, RefreshCw, Star } from 'lucide-react';
+import { CurrentWar, WarMember, LeagueGroup, CWLWar } from '../types';
+import { getClanCurrentWar, getClanWarLeagueGroup, getClanWarLeagueWar } from '../services/cocService';
+import { Timer, Swords, Skull, RefreshCw, Star, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface CurrentWarProps {
   clanTag: string;
   onMemberClick: (tag: string) => void;
 }
+
+type WarType = 'classic' | 'cwl' | 'none';
 
 // Helper to parse CoC API timestamps (YYYYMMDDTHHmmss.000Z)
 const parseCoCTimestamp = (timestamp: string): Date => {
@@ -155,35 +157,95 @@ const MemberCard: React.FC<MemberCardProps> = ({ member, opponentMembers, isOppo
 };
 
 export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberClick }) => {
-  const [war, setWar] = useState<CurrentWar | null>(null);
+  const [warType, setWarType] = useState<WarType>('none');
+  const [classicWar, setClassicWar] = useState<CurrentWar | null>(null);
+  const [cwlGroup, setCwlGroup] = useState<LeagueGroup | null>(null);
+  const [cwlWars, setCwlWars] = useState<CWLWar[]>([]);
+  const [currentCwlRound, setCurrentCwlRound] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState<string>('');
   const [timerLabel, setTimerLabel] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [, setTick] = useState(0); // Force re-render for time ago updates
+  const [, setTick] = useState(0);
 
+  // Fetch war data
   useEffect(() => {
     const fetchWar = async (isBackgroundRefresh = false) => {
       try {
         if (isBackgroundRefresh) {
           setIsRefreshing(true);
         }
-        const data = await getClanCurrentWar(clanTag);
-        setWar(data);
-        setLastUpdated(new Date());
+
+        // Try to fetch CWL first
+        try {
+          const leagueGroup = await getClanWarLeagueGroup(clanTag);
+          setCwlGroup(leagueGroup);
+          
+          // Find the active round (first round with non-#0 wars)
+          let activeRoundIndex = 0;
+          for (let i = 0; i < leagueGroup.rounds.length; i++) {
+            if (leagueGroup.rounds[i].warTags.some(tag => tag !== '#0')) {
+              activeRoundIndex = i;
+              break;
+            }
+          }
+          
+          const activeRound = leagueGroup.rounds[activeRoundIndex];
+          if (activeRound && activeRound.warTags) {
+            // Find our clan's war in this round
+            const warPromises = activeRound.warTags
+              .filter(tag => tag !== '#0')
+              .map(tag => getClanWarLeagueWar(tag).catch(() => null));
+            
+            const wars = (await Promise.all(warPromises)).filter(w => w !== null) as CWLWar[];
+            
+            // Find the war where our clan is participating
+            const ourWar = wars.find(w => 
+              w.clan.tag === clanTag || w.opponent.tag === clanTag
+            );
+            
+            if (ourWar) {
+              setCwlWars([ourWar]);
+              setWarType('cwl');
+              setCurrentCwlRound(activeRoundIndex);
+              setLastUpdated(new Date());
+              setLoading(false);
+              if (isBackgroundRefresh) {
+                setTimeout(() => setIsRefreshing(false), 1000);
+              }
+              return;
+            }
+          }
+        } catch (cwlError) {
+          // CWL not available, try classic war
+          console.log('CWL not available, checking classic war');
+        }
+
+        // Try classic war
+        const war = await getClanCurrentWar(clanTag);
+        if (war && war.state !== 'notInWar') {
+          setClassicWar(war);
+          setWarType('classic');
+          setLastUpdated(new Date());
+        } else {
+          setWarType('none');
+        }
       } catch (err) {
+        console.error('Error fetching war:', err);
         setError('Failed to load war data.');
+        setWarType('none');
       } finally {
         setLoading(false);
         if (isBackgroundRefresh) {
-          setTimeout(() => setIsRefreshing(false), 1000); // Show indicator for at least 1s
+          setTimeout(() => setIsRefreshing(false), 1000);
         }
       }
     };
+
     fetchWar();
-    const interval = setInterval(() => fetchWar(true), 60000); // Auto-refresh every minute
+    const interval = setInterval(() => fetchWar(true), 60000);
     return () => clearInterval(interval);
   }, [clanTag]);
 
@@ -195,16 +257,42 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
     return () => clearInterval(interval);
   }, []);
 
+  // Load CWL war for a specific round
+  const loadCwlRound = async (roundIndex: number) => {
+    if (!cwlGroup || roundIndex < 0 || roundIndex >= cwlGroup.rounds.length) return;
+    
+    setIsRefreshing(true);
+    const round = cwlGroup.rounds[roundIndex];
+    
+    try {
+      const warPromises = round.warTags
+        .filter(tag => tag !== '#0')
+        .map(tag => getClanWarLeagueWar(tag).catch(() => null));
+      
+      const wars = (await Promise.all(warPromises)).filter(w => w !== null) as CWLWar[];
+      const ourWar = wars.find(w => w.clan.tag === clanTag || w.opponent.tag === clanTag);
+      
+      if (ourWar) {
+        setCwlWars([ourWar]);
+        setCurrentCwlRound(roundIndex);
+      }
+    } catch (err) {
+      console.error('Error loading CWL round:', err);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   // Timer Logic
   useEffect(() => {
-    if (!war || war.state === 'warEnded' || war.state === 'notInWar') return;
+    const currentWar = warType === 'cwl' ? cwlWars[0] : classicWar;
+    if (!currentWar || currentWar.state === 'warEnded' || currentWar.state === 'notInWar') return;
 
     const updateTimer = () => {
       const now = new Date().getTime();
-      // If in preparation, count down to startTime. If in war, count down to endTime.
-      const targetDate = war.state === 'preparation' 
-          ? parseCoCTimestamp(war.startTime) 
-          : parseCoCTimestamp(war.endTime);
+      const targetDate = currentWar.state === 'preparation' 
+          ? parseCoCTimestamp(currentWar.startTime) 
+          : parseCoCTimestamp(currentWar.endTime);
           
       const distance = targetDate.getTime() - now;
 
@@ -218,42 +306,13 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       setTimer(`${hours}h ${minutes}m ${seconds}s`);
-      setTimerLabel(war.state === 'preparation' ? 'Battle Starts In' : 'War Ends In');
+      setTimerLabel(currentWar.state === 'preparation' ? 'Battle Starts In' : 'War Ends In');
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [war]);
-
-  if (loading) return <LoadingSpinner />;
-  
-  if (error || !war || war.state === 'notInWar') {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 bg-slate-800 rounded-xl border border-slate-700">
-        <RefreshCw className="w-16 h-16 text-slate-600 mb-4" />
-        <h2 className="text-xl font-bold text-white">No Active War</h2>
-        <p className="text-slate-400">The clan is not currently in a classic clan war.</p>
-        <button onClick={() => window.location.reload()} className="mt-4 flex items-center text-coc-gold hover:underline">
-            <RefreshCw size={16} className="mr-2"/> Refresh
-        </button>
-      </div>
-    );
-  }
-
-  const myClan = war.clan;
-  const enemyClan = war.opponent;
-
-  // Calculate star progress and attacks
-  const myStars = myClan.stars || 0;
-  const enemyStars = enemyClan.stars || 0;
-  const maxStars = war.teamSize * 3;
-  const myAttacksUsed = myClan.attacks || 0;
-  const enemyAttacksUsed = enemyClan.attacks || 0;
-  const totalAttacks = war.teamSize * 2;
-
-  // Check for perfect war
-  const isPerfectWar = myStars === maxStars;
+  }, [warType, classicWar, cwlWars]);
 
   // Format last updated time
   const getTimeAgo = () => {
@@ -264,6 +323,38 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
     if (minutes === 1) return '1 min ago';
     return `${minutes} mins ago`;
   };
+
+  if (loading) return <LoadingSpinner />;
+  
+  if (error || warType === 'none') {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 bg-slate-800 rounded-xl border border-slate-700">
+        <RefreshCw className="w-16 h-16 text-slate-600 mb-4" />
+        <h2 className="text-xl font-bold text-white">No Active War</h2>
+        <p className="text-slate-400">The clan is not currently in a war.</p>
+        <button onClick={() => window.location.reload()} className="mt-4 flex items-center text-coc-gold hover:underline">
+            <RefreshCw size={16} className="mr-2"/> Refresh
+        </button>
+      </div>
+    );
+  }
+
+  // Get current war data
+  const currentWar = warType === 'cwl' ? cwlWars[0] : classicWar;
+  if (!currentWar) return null;
+
+  const myClan = currentWar.clan;
+  const enemyClan = currentWar.opponent;
+  const myStars = myClan.stars || 0;
+  const enemyStars = enemyClan.stars || 0;
+  const maxStars = currentWar.teamSize * 3;
+  const myAttacksUsed = myClan.attacks || 0;
+  const enemyAttacksUsed = enemyClan.attacks || 0;
+  const totalAttacks = currentWar.teamSize * 2;
+  const isPerfectWar = myStars === maxStars;
+
+  // CWL navigation info
+  const totalRounds = cwlGroup ? cwlGroup.rounds.filter(r => r.warTags.some(t => t !== '#0')).length : 0;
 
   return (
     <div className="space-y-6">
@@ -280,14 +371,53 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
               <>Auto-updates every minute</>
             )}
           </span>
+          {warType === 'cwl' && (
+            <span className="ml-4 px-3 py-1 bg-purple-900/50 border border-purple-700 rounded-lg text-purple-300 font-bold text-xs flex items-center">
+              <Trophy size={14} className="mr-1" /> CLAN WAR LEAGUE
+            </span>
+          )}
         </div>
         <div className="text-xs text-slate-500">
           Last updated: <span className="text-slate-300 font-mono">{getTimeAgo()}</span>
         </div>
       </div>
 
+      {/* CWL Round Navigation */}
+      {warType === 'cwl' && cwlGroup && (
+        <div className="flex items-center justify-center bg-slate-800/50 border border-purple-700 rounded-lg px-4 py-3">
+          <button
+            onClick={() => loadCwlRound(currentCwlRound - 1)}
+            disabled={currentCwlRound === 0}
+            className={`p-2 rounded-lg transition-all ${
+              currentCwlRound > 0
+                ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                : 'bg-slate-900 text-slate-600 cursor-not-allowed'
+            }`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="mx-6 text-center">
+            <div className="text-sm text-slate-400">War Day</div>
+            <div className="text-2xl font-bold text-white">
+              {currentCwlRound + 1} <span className="text-slate-500">of</span> {totalRounds}
+            </div>
+          </div>
+          <button
+            onClick={() => loadCwlRound(currentCwlRound + 1)}
+            disabled={currentCwlRound >= totalRounds - 1}
+            className={`p-2 rounded-lg transition-all ${
+              currentCwlRound < totalRounds - 1
+                ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                : 'bg-slate-900 text-slate-600 cursor-not-allowed'
+            }`}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+
       {/* Perfect War Banner */}
-      {isPerfectWar && (
+      {isPerfectWar && currentWar.state !== 'preparation' && (
         <div className="bg-gradient-to-r from-yellow-900/80 via-amber-800/80 to-yellow-900/80 border-2 border-coc-gold rounded-xl p-4 shadow-2xl shadow-yellow-600/50 animate-pulse">
           <div className="flex items-center justify-center space-x-3">
             <Star className="text-coc-gold animate-spin" size={32} style={{ animationDuration: '3s' }} />
@@ -301,9 +431,21 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
       )}
 
       {/* Header Stats */}
-      <div className={`bg-slate-800 rounded-xl p-6 shadow-lg relative overflow-hidden border-2 transition-all ${isPerfectWar ? 'border-coc-gold shadow-2xl shadow-yellow-600/30' : 'border-slate-700'}`}>
+      <div className={`bg-slate-800 rounded-xl p-6 shadow-lg relative overflow-hidden border-2 transition-all ${
+        isPerfectWar && currentWar.state !== 'preparation' 
+          ? 'border-coc-gold shadow-2xl shadow-yellow-600/30' 
+          : warType === 'cwl' 
+          ? 'border-purple-700' 
+          : 'border-slate-700'
+      }`}>
          {/* Background Gradient Effect */}
-         <div className={`absolute inset-0 pointer-events-none ${isPerfectWar ? 'bg-gradient-to-r from-yellow-900/30 via-transparent to-yellow-900/30' : 'bg-gradient-to-r from-blue-900/20 to-red-900/20'}`}></div>
+         <div className={`absolute inset-0 pointer-events-none ${
+           isPerfectWar && currentWar.state !== 'preparation'
+             ? 'bg-gradient-to-r from-yellow-900/30 via-transparent to-yellow-900/30' 
+             : warType === 'cwl'
+             ? 'bg-gradient-to-r from-purple-900/20 via-transparent to-purple-900/20'
+             : 'bg-gradient-to-r from-blue-900/20 to-red-900/20'
+         }`}></div>
 
          <div className="flex flex-col md:flex-row justify-between items-center relative z-10">
             {/* My Clan */}
@@ -326,7 +468,7 @@ export const CurrentWarPage: React.FC<CurrentWarProps> = ({ clanTag, onMemberCli
                         <div className="text-xl font-mono font-bold text-white whitespace-nowrap min-w-[160px]">{timer}</div>
                     </div>
                 </div>
-                <div className="mt-2 text-xs text-slate-500 font-mono">{war.teamSize} vs {war.teamSize}</div>
+                <div className="mt-2 text-xs text-slate-500 font-mono">{currentWar.teamSize} vs {currentWar.teamSize}</div>
             </div>
 
             {/* Enemy Clan */}
