@@ -45,6 +45,7 @@ const ENTITY_IMAGES: Record<string, string> = {
   "Apprentice Warden": "151_icon.png",
   "Druid": "197_icon.png",
   "Furnace": "218_icon.png",
+  "Meteor Golem": "241_icon.png",
 
   // Spells
   "Lightning Spell": "43.png",
@@ -63,6 +64,7 @@ const ENTITY_IMAGES: Record<string, string> = {
   "Bat Spell": "110.png",
   "Overgrowth Spell": "175.png",
   "Ice Block Spell": "236.png",
+  "Totem Spell": "244.png",
 
   // Heroes
   "Barbarian King": "61_icon.png",
